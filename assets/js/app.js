@@ -175,31 +175,23 @@ $.getJSON("data/fireDistrict.geojson", function (data) {
   map.addLayer(fireDistrict);
 });
 
-//Create a color dictionary based off of subway route_id
-var subwayColors = {"1":"#ff3135", "2":"#ff3135", "3":"ff3135", "4":"#009b2e",
-    "5":"#009b2e", "6":"#009b2e", "7":"#ce06cb", "A":"#fd9a00", "C":"#fd9a00",
-    "E":"#fd9a00", "SI":"#fd9a00","H":"#fd9a00", "Air":"#ffff00", "B":"#ffff00",
-    "D":"#ffff00", "F":"#ffff00", "M":"#ffff00", "G":"#9ace00", "FS":"#6e6e6e",
-    "GS":"#6e6e6e", "J":"#976900", "Z":"#976900", "L":"#969696", "N":"#ffff00",
-    "Q":"#ffff00", "R":"#ffff00" };
-
-map.createPane("pane_subwayLines");
-map.getPane("pane_subwayLines").style.zIndex = 401;
-var subwayLines = L.geoJson(null, {
-  pane: "pane_subwayLines",
+map.createPane("pane_hydrants");
+map.getPane("pane_hydrants").style.zIndex = 401;
+var hydrants = L.geoJson(null, {
+  pane: "pane_hydrants",
   style: function (feature) {
       return {
-        color: subwayColors[feature.properties.route_id],
+        color: 'red',
         weight: 3,
         opacity: 1
       };
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Division</th><td>" + feature.properties.Division + "</td></tr>" + "<tr><th>Line</th><td>" + feature.properties.Line + "</td></tr>" + "<table>";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Division</th><td>" + feature.properties.COMMENT + "</td></tr>" + "<tr><th>Line</th><td>" + feature.properties.FEATURE + "</td></tr>" + "<table>";
       layer.on({
         click: function (e) {
-          $("#feature-title").html(feature.properties.Line);
+          $("#feature-title").html(feature.properties.COMMENT);
           $("#feature-info").html(content);
           $("#featureModal").modal("show");
 
@@ -219,13 +211,13 @@ var subwayLines = L.geoJson(null, {
         }
       },
       mouseout: function (e) {
-        subwayLines.resetStyle(e.target);
+        hydrants.resetStyle(e.target);
       }
     });
   }
 });
-$.getJSON("data/subways.geojson", function (data) {
-  subwayLines.addData(data);
+$.getJSON("data/hydrant.geojson", function (data) {
+  hydrants.addData(data);
 });
 
 /* Empty layer placeholder to add to layer control for listening when to add/remove groupHomes to markerClusters layer */
@@ -245,7 +237,7 @@ var groupHomes = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Zoning</th><td>" + feature.properties.BASE_DISTR + "</td></tr>" + "<tr><th>Address</th><td>" + feature.properties.fulladdres + "</td></tr>" + "<tr><th>Website</th><td><a class='url-break' href='" + feature.properties.URL + "' target='_blank'>" + feature.properties.URL + "</a></td></tr>" + "<table>";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Zoning</th><td>" + feature.properties.BASE_DISTR + "</td></tr>" + "<tr><th>Closest Group Home</th><td>" + feature.properties.TargetID + "</td></tr>" + "<tr><th>Distance</th><td>" + feature.properties.Distance +  "</a></td></tr>" + "<table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.fulladdres);
@@ -266,7 +258,7 @@ var groupHomes = L.geoJson(null, {
     }
   }
 });
-$.getJSON("data/groupHome.geojson", function (data) {
+$.getJSON("data/groupHomes.geojson", function (data) {
   groupHomes.addData(data);
   map.addLayer(ghLayer);
 });
@@ -297,7 +289,7 @@ var lifeSupport = L.geoJson(null, {
           highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
         }
       });
-      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/ls.png"></td><td class="feature-name">' + layer.feature.properties.NAME + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/ls.png"></td><td class="feature-name">' + layer.feature.properties.fulladdres + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
       lifeSearch.push({
         address: layer.feature.properties.fulladdres,
         owner: layer.feature.properties.Property_O,
@@ -430,7 +422,7 @@ var layersTree = {
     ]},
     {label: '<b>Reference</b>', children: [
       {label: 'Fire District', layer: fireDistrict},
-      {label: 'Subway Lines', layer: subwayLines}
+      {label: 'Fire Hydrants', layer: hydrants}
     ]},
   ]
 }
@@ -470,7 +462,7 @@ $(document).one("ajaxStop", function () {
   var groupHomesBH = new Bloodhound({
     name: "GroupHomes",
     datumTokenizer: function (d) {
-      return Bloodhound.tokenizers.whitespace(d.name);
+      return Bloodhound.tokenizers.whitespace(d.fulladdres);
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     local: ghSearch,
@@ -480,12 +472,13 @@ $(document).one("ajaxStop", function () {
   var lifeSupportBH = new Bloodhound({
     name: "LifeSupport",
     datumTokenizer: function (d) {
-      return Bloodhound.tokenizers.whitespace(d.name);
+      return Bloodhound.tokenizers.whitespace(d.fulladdres);
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     local: lifeSearch,
     limit: 10
   });
+
 
   var geonamesBH = new Bloodhound({
     name: "GeoNames",
@@ -528,19 +521,19 @@ $(document).one("ajaxStop", function () {
     hint: false
   }, {
     name: "GroupHomes",
-    displayKey: "name",
+    displayKey: "address",
     source: groupHomesBH.ttAdapter(),
     templates: {
       header: "<h4 class='typeahead-header'><img src='assets/img/gh.png' width='24' height='28'>&nbsp;Group Homes</h4>",
-      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
+      suggestion: Handlebars.compile(["{{address}}<br>&nbsp;<small>{{owner}}</small>"].join(""))
     }
   }, {
     name: "LifeSupport",
-    displayKey: "name",
+    displayKey: "address",
     source: lifeSupportBH.ttAdapter(),
     templates: {
       header: "<h4 class='typeahead-header'><img src='assets/img/ls.png' width='24' height='28'>&nbsp;Life Support</h4>",
-      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
+      suggestion: Handlebars.compile(["{{address}}<br>&nbsp;<small>{{owner}}</small>"].join(""))
     }
   }, {
     name: "GeoNames",
@@ -550,7 +543,7 @@ $(document).one("ajaxStop", function () {
       header: "<h4 class='typeahead-header'><img src='assets/img/globe.png' width='25' height='25'>&nbsp;GeoNames</h4>"
     }
   }).on("typeahead:selected", function (obj, datum) {
-    if (datum.source === "Fire District") {
+    if (datum.source === "FireDistrict") {
       map.fitBounds(datum.bounds);
     }
     if (datum.source === "GroupHomes") {
