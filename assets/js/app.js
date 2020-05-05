@@ -1,9 +1,33 @@
-var map, featureList, ghSearch = [], lifeSearch = [];
+var map, ghSearch = [], addrSearch = [];
 
-$(window).resize(function() {
-  sizeLayerControl();
+$(document).ready(function() {
+  getViewport();
 });
 
+function getViewport() {
+  if (sidebar.isVisible()) {
+    map.setActiveArea({
+      position: "absolute",
+      top: "0px",
+      left: $(".leaflet-sidebar").css("width"),
+      right: "0px",
+      height: $("#map").css("height")
+    });
+  } else {
+    map.setActiveArea({
+      position: "absolute",
+      top: "0px",
+      left: "0px",
+      right: "0px",
+      height: $("#map").css("height")
+    });
+  }
+  if (document.body.clientWidth <= 767) {
+    $(".leaflet-sidebar .close").css("top", "8px");
+  } else {
+    $(".leaflet-sidebar .close").css("top", "15px");
+  }
+}
 $(document).on("click", ".feature-row", function(e) {
   $(document).off("mouseout", ".feature-row", clearHighlight);
   sidebarClick(parseInt($(this).attr("id"), 10));
@@ -24,22 +48,11 @@ $("#about-btn").click(function() {
 });
 
 $("#full-extent-btn").click(function() {
-  map.fitBounds(fireDistrict.getBounds());
+  map.fitBounds(boroughs.getBounds());
   $(".navbar-collapse.in").collapse("hide");
   return false;
 });
 
-$("#legend-btn").click(function() {
-  $("#legendModal").modal("show");
-  $(".navbar-collapse.in").collapse("hide");
-  return false;
-});
-
-$("#login-btn").click(function() {
-  $("#loginModal").modal("show");
-  $(".navbar-collapse.in").collapse("hide");
-  return false;
-});
 
 $("#list-btn").click(function() {
   animateSidebar();
@@ -87,34 +100,24 @@ function sidebarClick(id) {
     map.invalidateSize();
   }
 }
-
-function syncSidebar() {
-  /* Empty sidebar features */
-  $("#feature-list tbody").empty();
-  /* Loop through groupHomes layer and add only features which are in the map bounds */
-  groupHomes.eachLayer(function (layer) {
-    if (map.hasLayer(ghLayer)) {
-      if (map.getBounds().contains(layer.getLatLng())) {
-        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/gh.png"></td><td class="feature-name">' + layer.feature.properties.fulladdres + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
-      }
-    }
-  });
-  /* Loop through lifeSupport layer and add only features which are in the map bounds */
-  lifeSupport.eachLayer(function (layer) {
-    if (map.hasLayer(lsLayer)) {
-      if (map.getBounds().contains(layer.getLatLng())) {
-        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/ls.png"></td><td class="feature-name">' + layer.feature.properties.fulladdres + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
-      }
-    }
-  });
-  /* Update list.js featureList */
-  featureList = new List("features", {
-    valueNames: ["feature-name"]
-  });
-  featureList.sort("feature-name", {
-    order: "asc"
+function sidebarClick(id) {
+  /* If sidebar takes up entire screen, hide it and go to the map */
+  if (document.body.clientWidth <= 767) {
+    sidebar.hide();
+    getViewport();
+  }
+  map.addLayer(ghLayer);
+  var layer = markerClusters.getLayer(id);
+  markerClusters.zoomToShowLayer(layer, function() {
+    map.setView([layer.getLatLng().lat, layer.getLatLng().lng], 18);
+    layer.fire("click");
   });
 }
+
+$("#nav-btn").click(function() {
+  $(".navbar-collapse").collapse("toggle");
+  return false;
+});
 
 /* Basemap Layers */
 var ortho2019 = L.tileLayer.wms('https://services.nconemap.gov/secure/services/Imagery/Orthoimagery_2019/ImageServer/WMSServer?', {
@@ -145,22 +148,19 @@ var markerClusters = new L.MarkerClusterGroup({
   spiderfyOnMaxZoom: true,
   showCoverageOnHover: false,
   zoomToBoundsOnClick: true,
-  disableClusteringAtZoom: 16
+  disableClusteringAtZoom: 19
 });
 
 /* Map Center */
 map = L.map("map", {
-  zoom: 17,
+  zoom: 13,
   center: [35.339744, -81.872195],
   layers: [ortho2019, markerClusters, highlight],
   zoomControl: false,
   attributionControl: false
 });
 
-map.createPane("fd_pane");
-map.getPane("fd_pane").style.zIndex = 402;
 var fireDistrict = L.geoJson(null, {
-  pane: "fd_pane",
   style: function (feature) {
     return {
       color: "red",
@@ -175,49 +175,78 @@ $.getJSON("data/fireDistrict.geojson", function (data) {
   map.addLayer(fireDistrict);
 });
 
-map.createPane("pane_hydrants");
-map.getPane("pane_hydrants").style.zIndex = 401;
-var hydrants = L.geoJson(null, {
-  pane: "pane_hydrants",
+var townLimits = L.geoJson(null, {
   style: function (feature) {
-      return {
-        color: 'red',
-        weight: 3,
-        opacity: 1
-      };
+    return {
+      color: "green",
+      fill: false,
+      opacity: 1,
+      interactive: false
+    };
+  },
+});
+$.getJSON("data/fcLimits.geojson", function (data) {
+  townLimits.addData(data);
+});
+
+function getZoneColor(zone)
+  {
+    return zone == 'C-1' ? '#fccde5'
+    : zone == 'C-2' ? '#FDB462'
+    : zone == 'C-3' ? '#fb8072'
+    : zone == 'M-1' ? '#d9d9d9'
+    : zone == 'OI' ? '#80b1d3'
+    : zone == 'R-6' ? '#ffffb3'
+    : zone == 'R-8' ? '#ffed6f'
+    : zone == 'R-15' ? '#ccebc5'
+    : zone == 'R-20' ? '#b3de69'
+    : zone == 'PRD' ? '#bc80bd' : '#fff';
+  }
+
+
+var ETJ = L.geoJson(null, {
+  style: function (feature) {
+    return {
+      color: "none",
+      fillOpacity: 0.5,
+      fillColor: getZoneColor(feature.properties.BASE_DISTR),
+      opacity: 1,
+      interactive: true
+    };
   },
   onEachFeature: function (feature, layer) {
-    if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Division</th><td>" + feature.properties.COMMENT + "</td></tr>" + "<tr><th>Line</th><td>" + feature.properties.FEATURE + "</td></tr>" + "<table>";
-      layer.on({
-        click: function (e) {
-          $("#feature-title").html(feature.properties.COMMENT);
-          $("#feature-info").html(content);
-          $("#featureModal").modal("show");
-
-        }
-      });
-    }
-    layer.on({
-      mouseover: function (e) {
-        var layer = e.target;
-        layer.setStyle({
-          weight: 3,
-          color: "#00FFFF",
-          opacity: 1
-        });
-        if (!L.Browser.ie && !L.Browser.opera) {
-          layer.bringToFront();
-        }
-      },
-      mouseout: function (e) {
-        hydrants.resetStyle(e.target);
-      }
-    });
+      layer.bindPopup(feature.properties.BASE_DISTR)
   }
 });
-$.getJSON("data/hydrant.geojson", function (data) {
-  hydrants.addData(data);
+$.getJSON("data/fcZoning.geojson", function (data) {
+  ETJ.addData(data);
+});
+
+function getTravelCost(cost)
+  {
+    return cost == '2400' ? '#fde725'
+    : cost == '4000' ? '#5dc962'
+    : cost == '4800' ? '#20908d'
+    : cost == '6400' ? '#3a528b'
+    : '#fff';
+  }
+
+var travelCost = L.geoJson(null, {
+  style: function (feature) {
+    return {
+      color: "none",
+      fillOpacity: 0.5,
+      fillColor: getTravelCost(feature.properties.cost_level),
+      opacity: 1,
+      interactive: true
+    };
+  },
+  onEachFeature: function (feature, layer) {
+      layer.bindPopup(feature.properties.layer)
+  }
+});
+$.getJSON("data/travelCost.geojson", function (data) {
+  travelCost.addData(data);
 });
 
 /* Empty layer placeholder to add to layer control for listening when to add/remove groupHomes to markerClusters layer */
@@ -237,7 +266,10 @@ var groupHomes = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Zoning</th><td>" + feature.properties.BASE_DISTR + "</td></tr>" + "<tr><th>Closest Group Home</th><td>" + feature.properties.TargetID + "</td></tr>" + "<tr><th>Distance</th><td>" + feature.properties.Distance +  "</a></td></tr>" + "<table>";
+      var dBook = feature.properties.Deed_Book;
+      var dPage = feature.properties.Deed_Page;
+      var deedLink = "http://cottweb.rutherfordcountync.gov/External/LandRecords/protected/v4/SrchBookPage.aspx?bAutoSearch=true&bk=" + dBook +  "&bks=&pg=" + dPage + "&pgs=&idx=CRP";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Zoning</th><td>" + feature.properties.BASE_DISTR + "</td></tr>" + "<tr><th>Closest Group Home</th><td>" + feature.properties.TargetID + "</td></tr>" + "<tr><th>Distance (miles)</th><td>" + feature.properties.Distance + "</td></tr>" + "<tr><th>" +'<a href="'+ deedLink + '" target="_blank">Deed Search</a>' + "</td></tr>" + "<table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.fulladdres);
@@ -246,10 +278,9 @@ var groupHomes = L.geoJson(null, {
           highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
         }
       });
-      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/gh.png"></td><td class="feature-name">' + layer.feature.properties.fulladdres + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      $("#groupHomes-table tbody").append('<tr style="cursor: pointer;" onclick="sidebarClick('+L.stamp(layer)+'); return false;"><td class="groupHomes-name">'+layer.feature.properties.fulladdres+'<i class="fa fa-chevron-right pull-right"></td></tr>');
       ghSearch.push({
-        address: layer.feature.properties.fulladdres,
-        owner: layer.feature.properties.Property_O,
+        name: layer.feature.properties.fulladdres,
         source: "GroupHomes",
         id: L.stamp(layer),
         lat: layer.feature.geometry.coordinates[1],
@@ -263,24 +294,28 @@ $.getJSON("data/groupHomes.geojson", function (data) {
   map.addLayer(ghLayer);
 });
 
-/* Empty layer placeholder to add to layer control for listening when to add/remove lifeSupport to markerClusters layer */
-var lsLayer = L.geoJson(null);
-var lifeSupport = L.geoJson(null, {
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove addrs to markerClusters layer */
+var addrLayer = L.geoJson(null);
+var addrs = L.geoJson(null, {
   pointToLayer: function (feature, latlng) {
-    return L.marker(latlng, {
-      icon: L.icon({
-        iconUrl: "assets/img/ls.png",
-        iconSize: [24, 28],
-        iconAnchor: [12, 28],
-        popupAnchor: [0, -25]
-      }),
+    return L.circleMarker(latlng, {
+      radius: 4,
+      fillColor: "#FFFFFF",
+      color: "#000000",
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.7,
       title: feature.properties.fulladdres,
       riseOnHover: true
     });
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Special</th><td>" + feature.properties.special + "</td></tr>" + "<tr><th>Address</th><td>" + feature.properties.ADRESS1 + "</td></tr>" + "<tr><th>Website</th><td><a class='url-break' href='" + feature.properties.URL + "' target='_blank'>" + feature.properties.URL + "</a></td></tr>" + "<table>";
+      var dBook = feature.properties.Deed_Book;
+      var dPage = feature.properties.Deed_Page;
+      var deedLink = "http://cottweb.rutherfordcountync.gov/External/LandRecords/protected/v4/SrchBookPage.aspx?bAutoSearch=true&bk=" + dBook +  "&bks=&pg=" + dPage + "&pgs=&idx=CRP";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Owner</th><td>" + feature.properties.Property_O + "</td></tr>" + "<tr><th>Zoning</th><td>" + feature.properties.BASE_DISTR + "</td></tr>" + "<tr><th>Closest Group Home</th><td>" + feature.properties.TargetID + "</td></tr>" + "<tr><th>Distance (miles)</th><td>" + feature.properties.Distance + "</td></tr>" + "<tr><th>" +'<a href="'+ deedLink + '" target="_blank">Deed Search</a>' + "</td></tr>" + "<table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.fulladdres);
@@ -289,11 +324,10 @@ var lifeSupport = L.geoJson(null, {
           highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
         }
       });
-      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="assets/img/ls.png"></td><td class="feature-name">' + layer.feature.properties.fulladdres + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
-      lifeSearch.push({
-        address: layer.feature.properties.fulladdres,
-        owner: layer.feature.properties.Property_O,
-        source: "LifeSupport",
+      $("#cities-table tbody").append('<tr style="cursor: pointer;" onclick="sidebarClick('+L.stamp(layer)+'); return false;"><td class="cities-name">'+layer.feature.properties.fulladdres+'<i class="fa fa-chevron-right pull-right"></td></tr>');
+      addrSearch.push({
+        name: layer.feature.properties.fulladdres,
+        source: "Addresses",
         id: L.stamp(layer),
         lat: layer.feature.geometry.coordinates[1],
         lng: layer.feature.geometry.coordinates[0]
@@ -301,40 +335,32 @@ var lifeSupport = L.geoJson(null, {
     }
   }
 });
-$.getJSON("data/lifeSupport.geojson", function (data) {
-  lifeSupport.addData(data);
+$.getJSON("data/addrs.geojson", function (data) {
+  addrs.addData(data);
 });
 
 /* Layer control listeners that allow for a single markerClusters layer */
 map.on("overlayadd", function(e) {
   if (e.layer === ghLayer) {
     markerClusters.addLayer(groupHomes);
-    syncSidebar();
   }
-  if (e.layer === lsLayer) {
-    markerClusters.addLayer(lifeSupport);
-    syncSidebar();
+  if (e.layer === addrLayer) {
+    markerClusters.addLayer(addrs);
   }
 });
 
 map.on("overlayremove", function(e) {
   if (e.layer === ghLayer) {
     markerClusters.removeLayer(groupHomes);
-    syncSidebar();
   }
-  if (e.layer === lsLayer) {
-    markerClusters.removeLayer(lifeSupport);
-    syncSidebar();
+  if (e.layer === addrLayer) {
+    markerClusters.removeLayer(addrs);
   }
 });
 
-/* Filter sidebar feature list to only show features in current map bounds */
-map.on("moveend", function (e) {
-  syncSidebar();
-});
 
-/* Clear feature highlight when map is clicked */
-map.on("click", function(e) {
+/* Clear feature highlight when featureModal is closed */
+$("#featureModal").on("hide.bs.modal", function (e) {
   highlight.clearLayers();
 });
 
@@ -354,7 +380,7 @@ var attributionControl = L.control({
 });
 attributionControl.onAdd = function (map) {
   var div = L.DomUtil.create("div", "leaflet-control-attribution");
-  div.innerHTML = "<span class='hidden-xs'>Developed by <a href='http://bryanmcbride.com'>bryanmcbride.com</a> | </span><a href='#' onclick='$(\"#attributionModal\").modal(\"show\"); return false;'>Attribution</a>";
+  div.innerHTML = "<span class='hidden-xs'>Developed by <a href='http://townofforestcity.com'>Town of Forest City</a> | </span><a href='#' onclick='$(\"#attributionModal\").modal(\"show\"); return false;'>Attribution</a>";
   return div;
 };
 map.addControl(attributionControl);
@@ -395,124 +421,80 @@ var locateControl = L.control.locate({
   }
 }).addTo(map);
 
-/* Larger screens get expanded layer control and visible sidebar */
+var sidebar = L.control.sidebar("sidebar", {
+  closeButton: true,
+  position: "left"
+}).on("shown", function () {
+  getViewport();
+}).on("hidden", function () {
+  getViewport();
+}).addTo(map);
+
 if (document.body.clientWidth <= 767) {
   var isCollapsed = true;
 } else {
   var isCollapsed = false;
+  sidebar.show();
 }
 
-/* Control Layer Tree */
-var basemapTree = {
-    label: '<b>Basemaps</b>',
-    children: [
-        {label: '2019 Satellite', layer: ortho2019},
-        {label: 'Topographic', layer: esritopo},
-        {label: 'Google Maps', layer: googleHybrid}
-    ]
+var baseLayers = {
+  "2019 Imagery": ortho2019,
+  "Terrain": esritopo,
+  "Imagery with Streets": googleHybrid
 };
 
-var layersTree = {
-  label: '<b>Layer</b>',
-  noShow: true,
-  children: [
-    {label: '<b>Points of Interest</b>', children: [
-      {label: '<img src="assets/img/gh.png" width="24" height="28">&nbsp;Group Homes', layer: ghLayer},
-	  {label: '<img src="assets/img/ls.png" width="24" height="28">&nbsp;Life Support', layer: lsLayer}
-    ]},
-    {label: '<b>Reference</b>', children: [
-      {label: 'Fire District', layer: fireDistrict},
-      {label: 'Fire Hydrants', layer: hydrants}
-    ]},
-  ]
-}
+var groupedOverlays = {
+  "Points of Interest": {
+    "<img src='assets/img/gh.png' width='24' height='28'>&nbsp;Group Homes": ghLayer,
+    "<img src='assets/img/ls.png' width='18' height='18'>&nbsp;011 Addresses": addrLayer
+  },
+  "Other": {
+    "Fire District": fireDistrict,
+    "Town Limits": townLimits,
+    "ETJ & Zoning": ETJ,
+    "Fire Response": travelCost
+  }
+};
 
-var layercontroltree = L.control.layers.tree(basemapTree, layersTree, {
-  namedToggle: false,
-  selectorBack: false,
-  collapsed: isCollapsed,
-});
-layercontroltree.addTo(map).collapseTree(false).expandSelected(true);
+var layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
+  collapsed: isCollapsed
+}).addTo(map);
 
 /* Highlight search box text on click */
 $("#searchbox").click(function () {
   $(this).select();
 });
 
-/* Prevent hitting enter from refreshing the page */
-$("#searchbox").keypress(function (e) {
-  if (e.which == 13) {
-    e.preventDefault();
-  }
-});
-
-$("#featureModal").on("hidden.bs.modal", function (e) {
-  $(document).on("mouseout", ".feature-row", clearHighlight);
-});
 
 /* Typeahead search functionality */
 $(document).one("ajaxStop", function () {
   $("#loading").hide();
-  sizeLayerControl();
-  /* Fit map to fireDistrict bounds */
-  map.fitBounds(fireDistrict.getBounds());
-  featureList = new List("features", {valueNames: ["feature-name"]});
-  featureList.sort("feature-name", {order:"asc"});
 
   var groupHomesBH = new Bloodhound({
     name: "GroupHomes",
     datumTokenizer: function (d) {
-      return Bloodhound.tokenizers.whitespace(d.fulladdres);
+      return Bloodhound.tokenizers.whitespace(d.name);
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     local: ghSearch,
     limit: 10
   });
+  var groupHomesList = new List("groupHomes", {valueNames: ["groupHomes-name"]}).sort("groupHomes-name", false);
 
-  var lifeSupportBH = new Bloodhound({
-    name: "LifeSupport",
-    datumTokenizer: function (d) {
-      return Bloodhound.tokenizers.whitespace(d.fulladdres);
-    },
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    local: lifeSearch,
-    limit: 10
-  });
-
-
-  var geonamesBH = new Bloodhound({
-    name: "GeoNames",
+  var addrBH = new Bloodhound({
+    name: "Addresses",
     datumTokenizer: function (d) {
       return Bloodhound.tokenizers.whitespace(d.name);
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
-    remote: {
-      url: "http://api.geonames.org/searchJSON?username=bootleaf&featureClass=P&maxRows=5&countryCode=US&name_startsWith=%QUERY",
-      filter: function (data) {
-        return $.map(data.geonames, function (result) {
-          return {
-            name: result.name + ", " + result.adminCode1,
-            lat: result.lat,
-            lng: result.lng,
-            source: "GeoNames"
-          };
-        });
-      },
-      ajax: {
-        beforeSend: function (jqXhr, settings) {
-          settings.url += "&east=" + map.getBounds().getEast() + "&west=" + map.getBounds().getWest() + "&north=" + map.getBounds().getNorth() + "&south=" + map.getBounds().getSouth();
-          $("#searchicon").removeClass("fa-search").addClass("fa-refresh fa-spin");
-        },
-        complete: function (jqXHR, status) {
-          $('#searchicon').removeClass("fa-refresh fa-spin").addClass("fa-search");
-        }
-      }
-    },
+    local: addrSearch,
     limit: 10
   });
+  // var addrList = new List("cities", {valueNames: ["cities-name"]}).sort("cities-name", {order:"asc"});
+
   groupHomesBH.initialize();
-  lifeSupportBH.initialize();
-  geonamesBH.initialize();
+  addrBH.initialize();
+  
 
   /* instantiate the typeahead UI */
   $("#searchbox").typeahead({
@@ -521,31 +503,21 @@ $(document).one("ajaxStop", function () {
     hint: false
   }, {
     name: "GroupHomes",
-    displayKey: "address",
+    displayKey: "name",
     source: groupHomesBH.ttAdapter(),
     templates: {
-      header: "<h4 class='typeahead-header'><img src='assets/img/gh.png' width='24' height='28'>&nbsp;Group Homes</h4>",
-      suggestion: Handlebars.compile(["{{address}}<br>&nbsp;<small>{{owner}}</small>"].join(""))
+      header: "<h4 class='typeahead-header'><img src='assets/img/gh.png' width='24' height='28'>&nbsp;GroupHomes</h4>",
+      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
     }
   }, {
-    name: "LifeSupport",
-    displayKey: "address",
-    source: lifeSupportBH.ttAdapter(),
-    templates: {
-      header: "<h4 class='typeahead-header'><img src='assets/img/ls.png' width='24' height='28'>&nbsp;Life Support</h4>",
-      suggestion: Handlebars.compile(["{{address}}<br>&nbsp;<small>{{owner}}</small>"].join(""))
-    }
-  }, {
-    name: "GeoNames",
+    name: "Addresses",
     displayKey: "name",
-    source: geonamesBH.ttAdapter(),
+    source: addrBH.ttAdapter(),
     templates: {
-      header: "<h4 class='typeahead-header'><img src='assets/img/globe.png' width='25' height='25'>&nbsp;GeoNames</h4>"
+      header: "<h4 class='typeahead-header'><img src='assets/img/ls.png' width='24' height='28'>&nbsp;Addresses</h4>",
+      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
     }
   }).on("typeahead:selected", function (obj, datum) {
-    if (datum.source === "FireDistrict") {
-      map.fitBounds(datum.bounds);
-    }
     if (datum.source === "GroupHomes") {
       if (!map.hasLayer(ghLayer)) {
         map.addLayer(ghLayer);
@@ -555,17 +527,14 @@ $(document).one("ajaxStop", function () {
         map._layers[datum.id].fire("click");
       }
     }
-    if (datum.source === "LifeSupport") {
-      if (!map.hasLayer(lsLayer)) {
-        map.addLayer(lsLayer);
+    if (datum.source === "Addresses") {
+      if (!map.hasLayer(addrLayer)) {
+        map.addLayer(addrLayer);
       }
-      map.setView([datum.lat, datum.lng], 17);
+      map.setView([datum.lat, datum.lng], 19);
       if (map._layers[datum.id]) {
         map._layers[datum.id].fire("click");
       }
-    }
-    if (datum.source === "GeoNames") {
-      map.setView([datum.lat, datum.lng], 14);
     }
     if ($(".navbar-collapse").height() > 50) {
       $(".navbar-collapse").collapse("hide");

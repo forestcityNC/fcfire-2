@@ -1,4 +1,4 @@
-html, body, #container {
+html, body, #map {
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -9,18 +9,6 @@ body {
 input[type="radio"], input[type="checkbox"] {
   margin: 0;
 }
-#sidebar {
-  display: block;
-  width: 250px;
-  height: 100%;
-  max-width: 100%;
-  float: left;
-}
-#map {
-  width: auto;
-  height: 100%;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
 #loading {
   position: absolute;
   width: 220px;
@@ -30,56 +18,49 @@ input[type="radio"], input[type="checkbox"] {
   margin: -10px 0 0 -110px;
   z-index: 20001;
 }
-#features {
-  margin: 0px;
-  border: none;
-  border-radius: 0px;
-  -webkit-box-shadow: none;
-    box-shadow: none;
-}
-#sidebar-hide-btn {
-  margin-top: -2px;
-}
-#aboutTabsContent {
-  padding-top: 10px;
-}
-.progress-bar-full {
-  width: 100%;
-}
-.white {
-  color: #FFFFFF;
-}
-.panel-heading{
-   width: 250px;
-}
-.panel-body{
-  width: 250px;
-}
-.feature-row {
-  cursor: pointer;
-  width: 250px;
-}
 .sidebar-wrapper {
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden;
 }
 .sidebar-table {
   position: absolute;
   width: 100%;
-  top: 103px;
+  top: 150px;
   bottom: 0px;
+  left: 0px;
+  right: 0px;
   overflow: auto;
 }
-.leaflet-control-layers {
-  overflow: auto;
+.leaflet-sidebar {
+  z-index: 1020;
+}
+.leaflet-sidebar > .leaflet-control {
+  padding: 0px;
+}
+.leaflet-sidebar .close {
+  right: 0px;
+  top: 5px;
+  background: transparent;
+  font-size: 21px;
 }
 .leaflet-control-layers label {
   font-weight: normal;
   margin-bottom: 0px;
 }
-.leaflet-control-layers-list input[type="radio"], input[type="checkbox"] {
-  margin: 2px;
+.leaflet-control-layers-group-name {
+  font-weight: bold;
+  margin-bottom: .2em;
+  display: block;
+}
+
+.leaflet-control-layers-group {
+  margin-bottom: .5em;
+}
+
+.leaflet-control-layers-group label {
+  padding-left: .5em;
 }
 .table {
   margin-bottom: 0px;
@@ -87,20 +68,10 @@ input[type="radio"], input[type="checkbox"] {
 .navbar .navbar-brand {
   font-weight: bold;
   font-size: 25px;
-  color: #FFFFFF;
+  color: white;
 }
 .navbar-collapse.in {
   overflow-y: hidden;
-}
-.navbar-header .navbar-icon-container {
-  margin-right: 15px;
-}
-.navbar-header .navbar-icon {
-  line-height: 50px;
-  height: 50px;
-}
-.navbar-header a.navbar-icon {
-  margin-left: 25px;
 }
 .typeahead {
   background-color: #FFFFFF;
@@ -147,23 +118,26 @@ input[type="radio"], input[type="checkbox"] {
   line-height: 34px;
   text-align: center;
 }
+.leaflet-popup-content {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 5px;
+}
 @media (max-width: 992px) {
   .navbar .navbar-brand {
     font-size: 18px;
   }
 }
 @media (max-width: 767px){
-  #sidebar {
-    display: none;
-  }
   .url-break {
     word-break: break-all;
     word-break: break-word;
     -webkit-hyphens: auto;
-      hyphens: auto;
-  }
-  .dropdown-menu a i{
-    color: #FFFFFF;
+    hyphens: auto;
   }
 }
 /* Print Handling */
