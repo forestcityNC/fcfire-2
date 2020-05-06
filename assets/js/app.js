@@ -172,7 +172,6 @@ var fireDistrict = L.geoJson(null, {
 });
 $.getJSON("data/fireDistrict.geojson", function (data) {
   fireDistrict.addData(data);
-  map.addLayer(fireDistrict);
 });
 
 var townLimits = L.geoJson(null, {
@@ -187,6 +186,7 @@ var townLimits = L.geoJson(null, {
 });
 $.getJSON("data/fcLimits.geojson", function (data) {
   townLimits.addData(data);
+  map.addLayer(townLimits);
 });
 
 function getZoneColor(zone)
