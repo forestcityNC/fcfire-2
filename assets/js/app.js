@@ -445,8 +445,8 @@ var baseLayers = {
 
 var groupedOverlays = {
   "Points of Interest": {
-    "<img src='assets/img/gh.png' width='24' height='28'>&nbsp;Group Homes": ghLayer,
-    "<img src='assets/img/ls.png' width='18' height='18'>&nbsp;011 Addresses": addrLayer
+    "<img src='assets/img/gh.png' width='16' height='20'>&nbsp;Group Homes": ghLayer,
+    "<i class ='fa fa-circle-o'></i>&nbsp;911 Addresses": addrLayer
   },
   "Other": {
     "Fire District": fireDistrict,
@@ -459,6 +459,13 @@ var groupedOverlays = {
 var layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
   collapsed: isCollapsed
 }).addTo(map);
+
+/* Prevent hitting enter from refreshing the page */
+$("#searchbox").keypress(function (e) {
+  if (e.which == 13) {
+    e.preventDefault();
+  }
+});
 
 /* Highlight search box text on click */
 $("#searchbox").click(function () {

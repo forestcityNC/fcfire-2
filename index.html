@@ -12,7 +12,7 @@
     <title>FC Fire Districts</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.css" />
     <link rel="stylesheet" href="assets/css/L.Control.Sidebar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css">
@@ -35,7 +35,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="#">Forest City Fire District</a>
+        <a class="navbar-brand" href="#">Forest City Inspections/Fire Reference</a>
       </div>
       <div class="navbar-collapse collapse">
         <form class="navbar-form navbar-right" role="search">
@@ -151,95 +151,29 @@
       <div class="modal-content">
         <div class="modal-header">
           <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title">A reference map for Group Homes and other important </h4>
+          <h4 class="modal-title">A reference map for group home locations and other FCFD-related information </h4>
         </div>
         <div class="modal-body">
           <ul class="nav nav-tabs" id="aboutTabs">
-            <li class="active"><a href="#about" data-toggle="tab"><i class="fa fa-question-circle"></i>&nbsp;About the BBHHTA</a></li>
-            <li><a href="#contact" data-toggle="tab"><i class="fa fa-envelope"></i>&nbsp;Contact us</a></li>
+            <li class="active"><a href="#about" data-toggle="tab"><i class="fa fa-question-circle"></i>&nbsp;About the Map</a></li>
             <li><a href="#disclaimer" data-toggle="tab"><i class="fa fa-exclamation-circle"></i>&nbsp;Disclaimer</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-globe"></i>&nbsp;Metadata <b class="caret"></b></a>
               <ul class="dropdown-menu">
-                <li><a href="#lifeSupports-tab" data-toggle="tab">Life Support</a></li>
-                <li><a href="#groupHomes-tab" data-toggle="tab">Trail Heads</a></li>
+                <li><a href="#lifeSupports-tab" data-toggle="tab">Group Homes</a></li>
+                <li><a href="#groupHomes-tab" data-toggle="tab"> 911 Addresses</a></li>
               </ul>
             </li>
           </ul>
           <div class="tab-content" id="aboutTabsContent" style="padding-top: 10px;">
             <div class="tab-pane fade active in" id="about">
-              <p>This would be a great place for something like a mission statement.</p>
-              <div class="panel panel-primary">
-                <div class="panel-heading">Goals</div>
-                <ul class="list-group">
-                  <li class="list-group-item">Thinking outside the automobile for transportaion options</li>
-                  <li class="list-group-item">Connecting the region</li>
-                  <li class="list-group-item">Putting infrastucture in place to create a healthy community</li>
-                  <li class="list-group-item">Creating a living environment attractive to business</li>
-                  <li class="list-group-item">Foster greater sense of community</li>
-                </ul>
-              </div>
+              <p>!!!</p>
             </div>
             <div id="disclaimer" class="tab-pane fade text-danger">
               <p>The data presented here is for presentation purposes only</p>
               <p>Absolutely no accuracy or completeness guarantee is implied or intended. All information on this map is subject to such variations and corrections as might result from further proposals, public discussion and/or accurate field survey.</p>
             </div>
-            <div class="tab-pane fade" id="contact">
-              <iframe width="100%" height="494" allowTransparency="true" frameborder="0" scrolling="no" style="border:none" src="http://www.emailmeform.com/builder/embed/vUd8d7GWdbRps3Y"><a href="http://www.emailmeform.com/builder/embed/vUd8d7GWdbRps3Y">Fill out form.</a></iframe>
-<div style="margin-top:18px;text-align:center"><div id='emf_advertisement'><font face="Verdana" size="2" color="#000000">Powered by</font><span style="position: relative; padding-left: 3px; bottom: -5px;"><img src="//app.emailmeform.com/images/footer-logo.png?RU1GLTAyLTE5LTEwNjc3" /></span><font face="Verdana" size="2" color="#000000">EMF </font><a style="text-decoration:none;" href="http://www.emailmeform.com/" target="_blank"><font face="Verdana" size="2" color="#000000">Online Order Form</font></a></div></div>
-<!--                 <form method="POST" name="contactform" action="http://maptastik.us/contact-form-handler.php"> 
-              <p>
-                <label for='name'>Your Name:</label> <br>
-                <input type="text" name="name">
-              </p>
-              <p>
-                <label for='email'>Email Address:</label> <br>
-                <input type="text" name="email"> <br>
-              </p>
-              <p>
-                <label for='message'>Message:</label> <br>
-                <textarea name="message"></textarea>
-              </p>
-                <input type="submit" value="Submit"><br>
-              </form>   -->
-             
-             <!-- <script language="JavaScript">
-
-              var frmvalidator  = new Validator("contactform");
-              frmvalidator.addValidation("name","req","Please provide your name"); 
-              frmvalidator.addValidation("email","req","Please provide your email"); 
-              frmvalidator.addValidation("email","email","Please enter a valid email address"); 
-              </script>-->
-             <!--  <form id="contact-form" method="post" name="contact_form" action="assets/php/contact-form-handler.php">
-                <div class="well well-sm">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label for="first-name">First Name:</label>
-                        <input type="text" class="form-control" id="first-name" name="first-name">
-                      </div>
-                      <div class="form-group">
-                        <label for="last-name">Last Name:</label>
-                        <input type="text" class="form-control" id="last-name" name="last-name">
-                      </div>
-                      <div class="form-group">
-                        <label for="email">Email:</label>
-                        <input type="text" class="form-control" id="email" name="email">
-                      </div>
-                    </div>
-                    <div class="col-md-8">
-                      <label for="message">Message:</label>
-                      <textarea class="form-control" rows="8" id="message" name="message"></textarea>
-                    </div>
-                    <div class="col-md-12">
-                      <p>
-                        <button type="submit" class="btn btn-primary pull-right" data-dismiss="modal">Submit</button>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </form> -->
-            </div>
+           
             <div class="tab-pane fade" id="lifeSupports-tab">
               <p>Proposed trails data created in partnership with <a href="http://bluegrasstomorrow.org/" target="_blank">Bluegrass Tomorrow</a>, <a href="http://www.bgadd.org/" target="_blank">the Bluegrass Area Development District</a>, <a href="http://www.cdpengineers.com/" target="_blank">CDP Engineers</a>, <a href="http://www.gscplanning.com/" target="_blank">Georgetown-Scott County Planning Commission</a>, and the <a href="http://www.nps.gov/index.htm" target="_blank">U.S. National Park Service</a></p>
             </div>
